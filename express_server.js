@@ -42,8 +42,6 @@ app.post("/urls", (req, res) => {
 });
 
 
-
-
 app.get("/urls/new", (req, res) => {
   res.render("urls_new");
 });
@@ -70,6 +68,12 @@ app.post("/urls/:shortURL/delete", (req, res) =>{
   delete urlDatabase[req.params.shortURL];
   res.redirect("/urls");
 });
+
+app.post("/urls/:shortURL/edit", (req, res)=> {
+  let newLong = req.body.longURL;
+  urlDatabase[req.params.shortURL] = newLong;
+  res.redirect("/urls");
+})
 
 app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
