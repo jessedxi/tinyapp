@@ -43,6 +43,7 @@ app.post("/urls", (req, res) => {
 
 
 
+
 app.get("/urls/new", (req, res) => {
   res.render("urls_new");
 });
@@ -61,6 +62,13 @@ app.get("/urls/:shortURL", (req, res) => {
     res.render("urls_404");
   }
   res.render("urls_show", templateVars);
+});
+
+app.post("/urls/:shortURL/delete", (req, res) =>{
+  console.log("Delete button pressed.");
+  console.log(req.params.shortURL);
+  delete urlDatabase[req.params.shortURL];
+  res.redirect("/urls");
 });
 
 app.get("/hello", (req, res) => {
