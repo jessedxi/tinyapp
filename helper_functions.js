@@ -18,10 +18,18 @@ const createNewUser = function (dataBase, emailInput, passwordInput, ID) {
   dataBase[ID] = newUser;
 };
 
+//finds if a user is within a current database by a registered email
 const findUser = function (email, db) {
   const currentUser = Object.values(db).find(user => user.email === email);
   return currentUser;
+};
+
+const checkPassword = function(password, user) {
+  if(user.password === password) {
+    return true;
+  }
+  return false;
 }
 
 
-module.exports = {generateRandomString, createNewUser, findUser};
+module.exports = {generateRandomString, createNewUser, findUser, checkPassword};

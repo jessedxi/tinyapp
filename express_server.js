@@ -3,7 +3,7 @@ const app = express();
 const PORT = 8080; // <= Defeault port 8080
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
-const { generateRandomString, createNewUser, findUser } = require("./helper_functions")
+const { generateRandomString, createNewUser, findUser, checkPassword } = require("./helper_functions")
 
 app.use(cookieParser());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -58,6 +58,14 @@ app.get("/register", (req, res) => {
   res.render("urls_register", templateVars);
 });
 
+app.get("/login", (req, res) => {
+  const templateVars ={
+    user: users[req.cookies["userID"]]
+  };
+
+  res.render("urls_login", templateVars);
+})
+
 //creates new url
 app.post("/urls", (req, res) => {
   const longURL = req.body.longURL;
@@ -111,9 +119,23 @@ app.post("/urls/:shortURL/edit", (req, res) => {
 
 //logs user in
 app.post("/login", (req, res) => {
-  let cookie = req.body.username
-  res.cookie('userID', cookie);
-  res.redirect("/urls");
+  
+  //finds if user is in DB using find user
+  //checks if password is assigned to that user object, passing the result of find user as parameter
+  //if all conditions meet, sets cookie as current user
+  // redirects to index
+
+  if(findUser(req.body.email, users)) {
+    if(checkPassword(req.body.password, findUser(req.body.email, users))) {
+      user = findUser(req.body.email, users);
+      res.cookie("userID", user.id);
+      res.redirect("/urls");
+    }
+
+    res.send('Error 403: Invalid Password');
+  }
+
+  res.send('Error 403:  Invalid email');
 });
 
 //logs user out
@@ -129,8 +151,12 @@ app.post("/register", (req, res) => {
   
 
   if(req.body.email === "" || req.body.password=== "") {
-    res.send('Error, please input valid information')
+    res.send('Error, satus code: 400');
   };
+
+  if(findUser(req.body.email, users)) {
+    res.send('Error, status code: 400');
+  }
 
   createNewUser(users, email, password, newUserID)
   console.log(users);
