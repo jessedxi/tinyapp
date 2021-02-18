@@ -30,7 +30,11 @@ const users = {
 
 
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  if(req.cookies["userID"] !== undefined) {
+    res.redirect("/urls")
+    } else {
+      res.redirect("/login")
+    }
 });
 
 app.get("/urls.json", (req, res) => {
