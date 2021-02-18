@@ -3,10 +3,14 @@ const app = express();
 const PORT = 8080; // <= Defeault port 8080
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
+const cookieSession = require("cookie-session")
 const bcrypt = require('bcrypt');
 const { generateRandomString, createNewUser, findUser, urlsForUser } = require("./helper_functions")
 
-app.use(cookieParser());
+app.use(cookieSession({
+  name: 'session',
+  keys: ['7f69fa85-caec-4d9c-acd7-eebdccb368d5', 'f13b4d38-41c4-46d3-9ef6-8836d03cd8eb'],
+}));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.set("view engine", "ejs");
 
@@ -31,7 +35,7 @@ const users = {
 
 
 app.get("/", (req, res) => {
-  if(req.cookies["userID"] !== undefined) {
+  if(req.session.user_id !== null) {
     res.redirect("/urls")
     } else {
       res.redirect("/login")
@@ -46,7 +50,7 @@ app.get("/urls.json", (req, res) => {
 app.get("/urls", (req, res) => {
   const templateVars = {
     urls: urlDatabase,
-    user: users[req.cookies["userID"]]
+    user: users[req.session.user_id]
   };
 
   res.render("urls_index", templateVars);
@@ -55,8 +59,12 @@ app.get("/urls", (req, res) => {
 //generates registration page
 app.get("/register", (req, res) => {
 
+  if(req.session.user_id !== null) {
+    res.redirect("/urls");
+  };
+
   const templateVars = {
-    user: users[req.cookies["userID"]]
+    user: users[req.session.user_id]
   };
 
   res.render("urls_register", templateVars);
@@ -64,7 +72,7 @@ app.get("/register", (req, res) => {
 
 app.get("/login", (req, res) => {
   const templateVars ={
-    user: users[req.cookies["userID"]]
+    user: users[req.session.user_id]
   };
 
   res.render("urls_login", templateVars);
@@ -74,7 +82,7 @@ app.get("/login", (req, res) => {
 app.post("/urls", (req, res) => {
   const newUrl = {
     longURL: req.body.longURL,
-    userID: req.cookies["userID"]
+    userID: req.session.user_id
   };
   let randomID = generateRandomString();
   urlDatabase[randomID] = newUrl;
@@ -84,7 +92,7 @@ app.post("/urls", (req, res) => {
 
 //shows create new url page
 app.get("/urls/new", (req, res) => {
-  const templateVars = { user: users[req.cookies["userID"]]};
+  const templateVars = { user: users[req.session.user_id]};
   res.render("urls_new", templateVars);
 });
 
@@ -103,14 +111,14 @@ app.get("/u/:shortURL", (req, res) => {
 //renders edit page
 app.get("/urls/:shortURL", (req, res) => {
   
-  if(urlDatabase[req.params.shortURL] && urlsForUser(req.cookies["userID"], urlDatabase ).includes(req.param.shortURL).toString()) {
+  if(urlDatabase[req.params.shortURL] && urlsForUser(req.session.user_id, urlDatabase ).includes(req.param.shortURL).toString()) {
   const templateVars = { shortURL: req.params.shortURL, 
     longURL: urlDatabase[req.params.shortURL].longURL, 
-    user: users[req.cookies["userID"]] 
+    user: users[req.session.user_id]
   }
   res.render("urls_show", templateVars);
   } else if (!urlDatabase[req.params.shortURL]) {
-    const templateVars = {user: users[req.cookies["userID"]]}
+    const templateVars = {user: users[req.session.user_id]}
     res.status(404).render("urls_404", templateVars);
   };
   
@@ -118,20 +126,24 @@ app.get("/urls/:shortURL", (req, res) => {
 
 //deletes url when delete is pressed
 app.post("/urls/:shortURL/delete", (req, res) => {
-  if(urlDatabase[req.params.shortURL].userID === req.cookies["userID"]) {
+  if(urlDatabase[req.params.shortURL].userID === req.session.user_id) {
   console.log("Delete button pressed.");
   console.log(req.params.shortURL);
   delete urlDatabase[req.params.shortURL];
   res.redirect("/urls");
+  } else {
+    res.status(403).send("I can't let you do that, Star Fox! -- ERROR 403!")
   }
 });
 
 //confirms edit when button is pressed
 app.post("/urls/:shortURL/edit", (req, res) => {
-  if(urlDatabase[req.params.shortURL].userID === req.cookies["userID"]) {
+  if(urlDatabase[req.params.shortURL].userID === req.session.user_id) {
   let newLong = req.body.longURL;
   urlDatabase[req.params.shortURL].longURL = newLong;
   res.redirect("/urls")
+  } else {
+    res.status(403).send('Error 403 - Permission Denied');
   }
 })
 
@@ -148,7 +160,7 @@ app.post("/login", (req, res) => {
     const user = findUser(req.body.email, users);
 
     if(bcrypt.compareSync(req.body.password, user.password)) {
-      res.cookie("userID", user.id);
+      req.session.user_id = user.id
       res.redirect("/urls");
     } else {
       res.status(403).send('Error 403: Invalid Password')
@@ -162,7 +174,7 @@ app.post("/login", (req, res) => {
 
 //logs user out
 app.post("/logout", (req, res) => {
-  res.clearCookie('userID');
+  req.session.user_id = null;
   res.redirect("/urls");
 });
 
@@ -183,7 +195,7 @@ app.post("/register", (req, res) => {
 
   createNewUser(users, email, password, newUserID)
   console.log(users);
-  res.cookie("userID", newUserID);
+ req.sesson,user_id = newUserID;
   res.redirect("/urls");
 
 });
