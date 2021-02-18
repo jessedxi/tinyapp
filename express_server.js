@@ -117,9 +117,12 @@ app.get("/urls/:shortURL", (req, res) => {
 
     res.render("urls_show", templateVars);
 
-  } else if (!urlDatabase[req.params.shortURL] || urlDatabaseIncludesShortUrl === false) {
+  } else if (urlDatabaseIncludesShortUrl === false && urlDatabase[req.params.shortURL]) {
     const templateVars = { user: users[req.session.user_id] };
     res.status(403).render("urls_Error", templateVars);
+  } else if (!urlDatabase[req.params.shortURL]) {
+    const templateVars = { user: users[req.session.user_id] };
+    res.status(404).render("urls_404", templateVars);
   }
 });
 
@@ -181,7 +184,7 @@ app.post("/register", (req, res) => {
     createNewUser(users, email, password, newUserID);
     req.session.user_id = newUserID;
     res.redirect("/urls");
-  };
+  }
 });
 
 app.get("/hello", (req, res) => {

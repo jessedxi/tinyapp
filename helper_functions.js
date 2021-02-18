@@ -7,7 +7,7 @@ const generateRandomString = function () {
   return result;
 };
 
-const createNewUser = function (dataBase, emailInput, passwordInput, ID) {
+const createNewUser = function(dataBase, emailInput, passwordInput, ID) {
   const newUser = {
     id: ID,
     email: emailInput,
@@ -18,24 +18,23 @@ const createNewUser = function (dataBase, emailInput, passwordInput, ID) {
 };
 
 //finds if a user is within a current database by a registered email
-const findUser = function (email, db) {
+const findUser = function(email, db) {
   const currentUser = Object.values(db).find(user => user.email === email);
   return currentUser;
 };
 
 
 const urlsForUser = function(id, object) {
-  let urlArray = []
+  let urlArray = [];
   for (const key in object) {
-    console.log(object[key]);
-    if(object[key].userID === id) {
-    urlArray.push(key);
+    if (object[key].userID === id) {
+      urlArray.push(key);
     };
   };
   return urlArray;
-}
+};
 
 
 
 
-module.exports = {generateRandomString, createNewUser, findUser, urlsForUser};
+module.exports = { generateRandomString, createNewUser, findUser, urlsForUser };
