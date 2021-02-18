@@ -24,12 +24,14 @@ const findUser = function (email, db) {
   return currentUser;
 };
 
+// Rendered useless with bcrypt, held onto in case of changes.
+/*
 const checkPassword = function(password, user) {
   if(user.password === password) {
     return true;
   }
   return false;
-}
+} */
 
 /*const urlDatabase = {
   "b2xVn2": {longURL: "http://www.lighthouselabs.ca", userID: "userRandomID"},
@@ -51,4 +53,4 @@ const urlsForUser = function(id, object) {
 
 
 
-module.exports = {generateRandomString, createNewUser, findUser, checkPassword, urlsForUser};
+module.exports = {generateRandomString, createNewUser, findUser, urlsForUser};

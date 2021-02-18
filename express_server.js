@@ -3,7 +3,8 @@ const app = express();
 const PORT = 8080; // <= Defeault port 8080
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
-const { generateRandomString, createNewUser, findUser, checkPassword, urlsForUser } = require("./helper_functions")
+const bcrypt = require('bcrypt');
+const { generateRandomString, createNewUser, findUser, urlsForUser } = require("./helper_functions")
 
 app.use(cookieParser());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -19,12 +20,12 @@ const users = {
   "userRandomID": {
     id: "userRandomID",
     email: "user@example.com",
-    password: "pmd"
+    password: bcrypt.hashSync("pmd", 10)
   },
   "user2RandomID": {
     id: "user2RandomID",
     email: "user2@example.com",
-    password: "dishwasher-funk"
+    password: bcrypt.hashSync("dishwasher-funk", 10)
   }
 }
 
@@ -146,7 +147,7 @@ app.post("/login", (req, res) => {
 
     const user = findUser(req.body.email, users);
 
-    if(checkPassword(req.body.password, user)) {
+    if(bcrypt.compareSync(req.body.password, user.password)) {
       res.cookie("userID", user.id);
       res.redirect("/urls");
     } else {
@@ -165,18 +166,19 @@ app.post("/logout", (req, res) => {
   res.redirect("/urls");
 });
 
+// registers new user
 app.post("/register", (req, res) => {
   const email = req.body.email
-  const password = req.body.password;
+  const password = bcrypt.hashSync(req.body.password, 10);
   const newUserID = generateRandomString();
   
 
   if(req.body.email === "" || req.body.password=== "") {
-    res.send('Error, satus code: 400');
+    res.status(400).send('Error, satus code: 400');
   };
 
   if(findUser(req.body.email, users)) {
-    res.send('Error, status code: 400');
+    res.status(400).send('Error, status code: 400');
   }
 
   createNewUser(users, email, password, newUserID)
