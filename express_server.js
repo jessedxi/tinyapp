@@ -107,9 +107,8 @@ app.get("/u/:shortURL", (req, res) => {
 
 //renders edit page
 app.get("/urls/:shortURL", (req, res) => {
-  const urlDatabaseIncludesShortUrl = urlsForUser(req.session.user_id, urlDatabase).includes(req.param.shortURL).toString();
-
-  if (urlDatabase[req.params.shortURL] && urlDatabaseIncludesShortUrl) {
+  const urlDatabaseIncludesShortUrl = urlsForUser(req.session.user_id, urlDatabase).includes(req.params.shortURL);
+  if (urlDatabaseIncludesShortUrl && urlDatabase[req.params.shortURL]) {
     const templateVars = {
       shortURL: req.params.shortURL,
       longURL: urlDatabase[req.params.shortURL].longURL,
@@ -118,9 +117,9 @@ app.get("/urls/:shortURL", (req, res) => {
 
     res.render("urls_show", templateVars);
 
-  } else if (!urlDatabase[req.params.shortURL]) {
+  } else if (!urlDatabase[req.params.shortURL] || urlDatabaseIncludesShortUrl === false) {
     const templateVars = { user: users[req.session.user_id] };
-    res.status(404).render("urls_404", templateVars);
+    res.status(403).render("urls_Error", templateVars);
   }
 });
 
