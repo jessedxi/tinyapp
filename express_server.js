@@ -3,7 +3,7 @@ const app = express();
 const PORT = 8080; // <= Defeault port 8080
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
-const { generateRandomString, createNewUser, findUser, checkPassword } = require("./helper_functions")
+const { generateRandomString, createNewUser, findUser, checkPassword, urlsForUser } = require("./helper_functions")
 
 app.use(cookieParser());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -11,15 +11,15 @@ app.set("view engine", "ejs");
 
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  "b2xVn2": {longURL: "http://www.lighthouselabs.ca", userID: "userRandomID"},
+  "9sm5xK": {longURL: "http://www.google.com", userID: "user2RandomID"}
 };
 
 const users = {
   "userRandomID": {
     id: "userRandomID",
     email: "user@example.com",
-    password: "purple-monkey-dinosaur"
+    password: "pmd"
   },
   "user2RandomID": {
     id: "user2RandomID",
@@ -39,7 +39,6 @@ app.get("/urls.json", (req, res) => {
 
 //generates urls main page
 app.get("/urls", (req, res) => {
-console.log(req.cookies["userID"]);
   const templateVars = {
     urls: urlDatabase,
     user: users[req.cookies["userID"]]
@@ -68,10 +67,14 @@ app.get("/login", (req, res) => {
 
 //creates new url
 app.post("/urls", (req, res) => {
-  const longURL = req.body.longURL;
+  const newUrl = {
+    longURL: req.body.longURL,
+    userID: req.cookies["userID"]
+  };
   let randomID = generateRandomString();
-  urlDatabase[randomID] = longURL;
+  urlDatabase[randomID] = newUrl;
   res.redirect("/urls/" + randomID);
+  console.log(urlDatabase);
 });
 
 //shows create new url page
@@ -82,39 +85,49 @@ app.get("/urls/new", (req, res) => {
 
 //redirects to website asigned to shortURL
 app.get("/u/:shortURL", (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL];
-  if (longURL === undefined) {
-    res.render("urls_404");
-  }
+  console.log(urlDatabase[req.params.shortURL])
+ 
+  if (urlDatabase[req.params.shortURL] === undefined) {
+    res.status(404).send("404 page not found!");
+  } else {
+  const longURL = urlDatabase[req.params.shortURL].longURL;
   res.redirect(longURL);
+  }
 });
 
 //renders edit page
 app.get("/urls/:shortURL", (req, res) => {
+  
+  if(urlDatabase[req.params.shortURL] && urlsForUser(req.cookies["userID"], urlDatabase ).includes(req.param.shortURL).toString()) {
   const templateVars = { shortURL: req.params.shortURL, 
-    longURL: urlDatabase[req.params.shortURL], 
+    longURL: urlDatabase[req.params.shortURL].longURL, 
     user: users[req.cookies["userID"]] 
-  };
-
-  if (!urlDatabase[req.params.shortURL]) {
-    res.render("urls_404");
   }
   res.render("urls_show", templateVars);
+  } else if (!urlDatabase[req.params.shortURL]) {
+    const templateVars = {user: users[req.cookies["userID"]]}
+    res.status(404).render("urls_404", templateVars);
+  };
+  
 });
 
 //deletes url when delete is pressed
 app.post("/urls/:shortURL/delete", (req, res) => {
+  if(urlDatabase[req.params.shortURL].userID === req.cookies["userID"]) {
   console.log("Delete button pressed.");
   console.log(req.params.shortURL);
   delete urlDatabase[req.params.shortURL];
   res.redirect("/urls");
+  }
 });
 
 //confirms edit when button is pressed
 app.post("/urls/:shortURL/edit", (req, res) => {
+  if(urlDatabase[req.params.shortURL].userID === req.cookies["userID"]) {
   let newLong = req.body.longURL;
-  urlDatabase[req.params.shortURL] = newLong;
-  res.redirect("/urls");
+  urlDatabase[req.params.shortURL].longURL = newLong;
+  res.redirect("/urls")
+  }
 })
 
 //logs user in
@@ -126,16 +139,20 @@ app.post("/login", (req, res) => {
   // redirects to index
 
   if(findUser(req.body.email, users)) {
-    if(checkPassword(req.body.password, findUser(req.body.email, users))) {
-      user = findUser(req.body.email, users);
+
+    const user = findUser(req.body.email, users);
+
+    if(checkPassword(req.body.password, user)) {
       res.cookie("userID", user.id);
       res.redirect("/urls");
+    } else {
+      res.status(403).send('Error 403: Invalid Password')
+    
     }
+  } else {
 
-    res.send('Error 403: Invalid Password');
+  res.status(403).send('Error 403:  Invalid email');
   }
-
-  res.send('Error 403:  Invalid email');
 });
 
 //logs user out

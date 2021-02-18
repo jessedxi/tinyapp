@@ -31,5 +31,24 @@ const checkPassword = function(password, user) {
   return false;
 }
 
+/*const urlDatabase = {
+  "b2xVn2": {longURL: "http://www.lighthouselabs.ca", userID: "userRandomID"},
+  "9sm5xK": {longURL: "http://www.google.com", userID: "user2RandomID"}
+};*/
 
-module.exports = {generateRandomString, createNewUser, findUser, checkPassword};
+const urlsForUser = function(id, object) {
+  let urlArray = []
+  for (const key in object) {
+    console.log(object[key]);
+    if(object[key].userID === id) {
+    urlArray.push(key);
+    }
+  };
+  return urlArray;
+}
+
+//console.log(urlsForUser("userRandomID", urlDatabase));
+
+
+
+module.exports = {generateRandomString, createNewUser, findUser, checkPassword, urlsForUser};
